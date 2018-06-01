@@ -2,7 +2,7 @@ from .control import Control
 import numpy as np
 import scipy.linalg as linalg
 
-class Control(Control):
+class LQR(Control):
     def __init__(self, **kwargs):
         super(Control, self).__init__(**kwargs)
 
@@ -11,14 +11,13 @@ class Control(Control):
 
         self.eps = 0.00001
 
-    def simulate_dynamics(self, x, u):
-        x_next = np.zeros(x.shape)
-        for index in range(x.shape[0]):
-            self.arm.reset(q=x[index, :self.arm.DOF], dq=x[index, self.arm.DOF:2*self.arm.DOF])
-            self.arm.apply_torque(u[index], self.arm.dt)
-            x_next[index, :] = np.hstack((self.arm.q, self.arm.dq))
 
-        return x_next
+    def simulate_dynamics(self, x, u):
+        self.arm.reset(q=x[:self.arm.DOF],
+                       dq=x[self.arm.DOF:self.arm.DOF*2])
+        self.arm.apply_torque(u, self.arm.dt)
+        xnext = np.hstack([np.copy(self.arm.q), np.copy(self.arm.dq)])
+        return xnext
 
     def finite_diff_method(self, x, u):
         x_1_perturbed = np.tile(x, (self.arm.DOF*2, 1)) + np.eye(self.arm.DOF*2) * self.eps
